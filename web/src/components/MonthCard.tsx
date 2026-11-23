@@ -30,7 +30,7 @@ export function MonthCard({ year, month0, activities, canEdit, onOpen, onAdd }: 
   const total = daysInMonth(year, month0);
 
   return (
-    <Card id={`month-${key}`} className={cn("scroll-mt-4 gap-0 py-0", isCurrent && "ring-2 ring-primary/80")}>
+    <Card id={`month-${key}`} className={cn("gap-0 py-0", isCurrent && "ring-2 ring-primary/80")}>
       <header className="flex items-center justify-between gap-2 px-4 pt-3.5 pb-2">
         <div className="flex items-baseline gap-2">
           <h2 className="text-base font-semibold tracking-tight">{MONTHS[month0]}</h2>

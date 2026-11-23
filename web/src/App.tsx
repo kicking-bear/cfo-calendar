@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Info, LogOut, Lock, Plus, RefreshCw, X } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Toggle } from "./components/ui/toggle";
@@ -49,6 +49,20 @@ export default function App() {
   const [groupFilter, setGroupFilter] = useState<Group[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [tipDismissed, setTipDismissed] = useState(() => readFlag(TIP_KEY));
+
+  // The header floats over the scrolling calendar (so it can be see-through);
+  // track its height so the calendar starts just below it.
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerH, setHeaderH] = useState(0);
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderH(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const load = useCallback(
     async (quiet = false) => {
@@ -155,8 +169,8 @@ export default function App() {
   const filtersOn = groupFilter.length > 0 || statusFilter.length > 0;
 
   return (
-    <div className="flex h-screen h-dvh flex-col overflow-hidden">
-      <header className="z-30 shrink-0 border-b bg-background">
+    <div className="relative h-screen h-dvh overflow-hidden">
+      <header ref={headerRef} className="absolute inset-x-0 top-0 z-30 border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
@@ -258,7 +272,10 @@ export default function App() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <main
+        className="absolute inset-0 overflow-y-auto overscroll-contain"
+        style={{ paddingTop: headerH, scrollPaddingTop: headerH + 16 }}
+      >
         <div className="mx-auto max-w-[1400px] px-4 py-4 pb-28 sm:px-6 sm:py-6">
         {loadError && (
           <Alert variant="destructive" className="mb-4">
