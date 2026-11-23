@@ -25,6 +25,7 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  --page: oklch(0.988 0 0);
 }
 
 @theme inline {
@@ -56,8 +57,10 @@
 @layer base {
   * { @apply border-border outline-ring/50; }
   html, body, #root { height: 100%; }
+  /* One flat page colour everywhere (incl. iOS overscroll), so nothing shows through around the header */
+  html, body { background: var(--page); }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
   }

@@ -155,9 +155,9 @@ export default function App() {
   const filtersOn = groupFilter.length > 0 || statusFilter.length > 0;
 
   return (
-    <div className="min-h-full bg-muted/40">
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto max-w-[1400px] px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+    <div className="min-h-full">
+      <header className="sticky top-0 z-30 border-b bg-background">
+        <div className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">District CFO Calendar</h1>
