@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Lock, MapPin, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./responsive-modal";
+import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle, useIsDesktop } from "./responsive-modal";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { DatePicker } from "./date-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,9 +36,12 @@ type Props = {
 
 export function ActivityModal({ state, session, onClose, onSaved, onDeleted, onEdit, onRequestSignIn }: Props) {
   const open = state.kind !== "closed";
+  const desktop = useMediaQuery("(min-width: 640px)");
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()}>
-      <ModalContent onOpenAutoFocus={(e) => state.kind !== "create" && e.preventDefault()}>
+      {/* Only jump into the title field on desktop. On phones that would pop the keyboard
+          up over the form, so nothing gets focus until the user taps a field. */}
+      <ModalContent onOpenAutoFocus={(e) => (state.kind !== "create" || !desktop) && e.preventDefault()}>
         {state.kind === "view" ? (
           <ActivityDetails a={state.activity} canEdit={!!session} onEdit={() => onEdit(state.activity)} onRequestSignIn={onRequestSignIn} />
         ) : open && session ? (
@@ -209,6 +213,7 @@ function ActivityForm({
   onSaved: (a: Activity) => void;
   onDeleted: (id: string) => void;
 }) {
+  const desktop = useIsDesktop();
   const [f, setF] = useState<FormState>(() => initialForm(existing, defaultMonth, session));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -278,7 +283,7 @@ function ActivityForm({
       <ModalBody className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="title">Activity</Label>
-          <Input id="title" value={f.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Unity Games Volleyball" autoFocus={!existing} />
+          <Input id="title" value={f.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Unity Games Volleyball" autoFocus={!existing && desktop} />
         </div>
 
         <div className="space-y-2">
