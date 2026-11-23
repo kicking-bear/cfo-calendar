@@ -5,7 +5,8 @@ import { Toggle } from "./components/ui/toggle";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { Separator } from "./components/ui/separator";
 import { MonthCard } from "./components/MonthCard";
-import { ActivitySheet, type SheetState } from "./components/ActivitySheet";
+import { ActivityModal, type ModalState } from "./components/ActivityModal";
+import { Toaster } from "./components/ui/sonner";
 import { SignInDialog } from "./components/SignInDialog";
 import { GroupDot, StatusIcon } from "./components/badges";
 import { cn } from "./lib/utils";
@@ -43,8 +44,8 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(loadSession);
   const [signInOpen, setSignInOpen] = useState(false);
-  const [afterSignIn, setAfterSignIn] = useState<SheetState | null>(null);
-  const [sheet, setSheet] = useState<SheetState>({ kind: "closed" });
+  const [afterSignIn, setAfterSignIn] = useState<ModalState | null>(null);
+  const [sheet, setSheet] = useState<ModalState>({ kind: "closed" });
   const [groupFilter, setGroupFilter] = useState<Group[]>([]);
   const [statusFilter, setStatusFilter] = useState<Status[]>([]);
   const [tipDismissed, setTipDismissed] = useState(() => readFlag(TIP_KEY));
@@ -120,7 +121,7 @@ export default function App() {
   }
 
   function addIn(monthKey: string) {
-    const next: SheetState = { kind: "create", month: monthKey };
+    const next: ModalState = { kind: "create", month: monthKey };
     if (!session) {
       setAfterSignIn(next);
       setSignInOpen(true);
@@ -322,7 +323,7 @@ export default function App() {
         <Plus className="size-6" />
       </button>
 
-      <ActivitySheet
+      <ActivityModal
         state={sheet}
         session={session}
         onClose={() => setSheet({ kind: "closed" })}
@@ -335,6 +336,7 @@ export default function App() {
           setSignInOpen(true);
         }}
       />
+      <Toaster position="top-center" richColors closeButton />
       <SignInDialog
         open={signInOpen}
         onOpenChange={(o) => {

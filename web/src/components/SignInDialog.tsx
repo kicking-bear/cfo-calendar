@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Modal, ModalBody, ModalContent, ModalDescription, ModalHeader, ModalTitle } from "./responsive-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,21 +27,22 @@ export function SignInDialog({ open, onOpenChange, onSignedIn }: { open: boolean
   }
 
   return (
-    <Dialog
+    <Modal
       open={open}
       onOpenChange={(o) => {
         if (!o) setError(null);
         onOpenChange(o);
       }}
     >
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Sign in to edit</DialogTitle>
-          <DialogDescription>
+      <ModalContent className="sm:max-w-sm">
+        <ModalHeader>
+          <ModalTitle>Sign in to edit</ModalTitle>
+          <ModalDescription>
             Enter your group's code (CWS, Binhi, Kadiwa or Buklod). You'll stay signed in on this device, and changes you make are labeled with your group.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+        <form onSubmit={submit} className="space-y-4 pb-[env(safe-area-inset-bottom)]">
           <div className="space-y-2">
             <Label htmlFor="code">Group code</Label>
             <Input
@@ -66,7 +67,8 @@ export function SignInDialog({ open, onOpenChange, onSignedIn }: { open: boolean
             {busy ? "Checking…" : "Sign in"}
           </Button>
         </form>
-      </DialogContent>
-    </Dialog>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 }

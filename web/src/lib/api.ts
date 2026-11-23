@@ -43,7 +43,11 @@ async function request<T>(path: string, init: RequestInit & { code?: string } = 
     throw new ApiError("Couldn't reach the server. Check your connection and try again.", 0);
   }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError((data as { error?: string }).error || `Request failed (${res.status}).`, res.status);
+  if (!res.ok) {
+    const d = data as { error?: string; detail?: string };
+    const msg = d.error || `Request failed (${res.status}).`;
+    throw new ApiError(d.detail ? `${msg} (${d.detail})` : msg, res.status);
+  }
   return data as T;
 }
 

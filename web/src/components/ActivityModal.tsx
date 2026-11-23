@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { CalendarDays, Lock, MapPin, Trash2 } from "lucide-react";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { toast } from "sonner";
+import { Modal, ModalBody, ModalContent, ModalDescription, ModalFooter, ModalHeader, ModalTitle } from "./responsive-modal";
+import { DatePicker } from "./date-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,20 +12,19 @@ import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Involvement, StatusBadge, StatusIcon } from "./badges";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { GROUPS, GROUP_META, STATUSES, STATUS_META, type Activity, type ActivityInput, type Group, type Status } from "@/lib/types";
-import { MONTHS, MONTHS_SHORT, relativeTime, whenLabel } from "@/lib/dates";
+import { MONTHS, MONTHS_SHORT, parseYmd, relativeTime, whenLabel } from "@/lib/dates";
 import { createActivity, deleteActivity, updateActivity, type Session } from "@/lib/api";
 
-export type SheetState =
+export type ModalState =
   | { kind: "closed" }
   | { kind: "view"; activity: Activity }
   | { kind: "edit"; activity: Activity }
   | { kind: "create"; month: string };
 
 type Props = {
-  state: SheetState;
+  state: ModalState;
   session: Session | null;
   onClose: () => void;
   onSaved: (a: Activity) => void;
@@ -32,18 +33,11 @@ type Props = {
   onRequestSignIn: () => void;
 };
 
-export function ActivitySheet({ state, session, onClose, onSaved, onDeleted, onEdit, onRequestSignIn }: Props) {
-  const desktop = useMediaQuery("(min-width: 640px)");
+export function ActivityModal({ state, session, onClose, onSaved, onDeleted, onEdit, onRequestSignIn }: Props) {
   const open = state.kind !== "closed";
   return (
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      <SheetContent
-        side={desktop ? "right" : "bottom"}
-        aria-describedby={undefined}
-        onOpenAutoFocus={(e) => state.kind !== "create" && e.preventDefault()}
-        className={cn("gap-0 p-0", desktop ? "w-full sm:max-w-md" : "max-h-[92dvh] rounded-t-2xl")}
-      >
-        {!desktop && <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-muted-foreground/30" />}
+    <Modal open={open} onOpenChange={(o) => !o && onClose()}>
+      <ModalContent onOpenAutoFocus={(e) => state.kind !== "create" && e.preventDefault()}>
         {state.kind === "view" ? (
           <ActivityDetails a={state.activity} canEdit={!!session} onEdit={() => onEdit(state.activity)} onRequestSignIn={onRequestSignIn} />
         ) : open && session ? (
@@ -56,8 +50,8 @@ export function ActivitySheet({ state, session, onClose, onSaved, onDeleted, onE
             onDeleted={onDeleted}
           />
         ) : null}
-      </SheetContent>
-    </Sheet>
+      </ModalContent>
+    </Modal>
   );
 }
 
@@ -71,12 +65,12 @@ function editedLine(a: Activity) {
 function ActivityDetails({ a, canEdit, onEdit, onRequestSignIn }: { a: Activity; canEdit: boolean; onEdit: () => void; onRequestSignIn: () => void }) {
   return (
     <>
-      <SheetHeader className="px-5 pt-4 sm:pt-6">
+      <ModalHeader>
         <StatusBadge status={a.status} />
-        <SheetTitle className="mt-1 pr-8 text-xl leading-tight tracking-tight">{a.title}</SheetTitle>
+        <ModalTitle className="mt-1 pr-8 text-xl leading-tight tracking-tight">{a.title}</ModalTitle>
         <Involvement groups={a.groups} lead={a.lead} className="mt-1" />
-      </SheetHeader>
-      <div className="flex-1 overflow-y-auto px-5 pb-4">
+      </ModalHeader>
+      <ModalBody>
         <dl className="space-y-3 text-sm">
           <div className="flex gap-3">
             <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -91,8 +85,8 @@ function ActivityDetails({ a, canEdit, onEdit, onRequestSignIn }: { a: Activity;
         </dl>
         {a.notes && <p className="mt-5 whitespace-pre-wrap rounded-lg bg-muted px-3 py-2.5 text-sm leading-relaxed">{a.notes}</p>}
         <p className="mt-6 text-xs text-muted-foreground">{editedLine(a)}</p>
-      </div>
-      <SheetFooter className="border-t px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      </ModalBody>
+      <ModalFooter className="flex-col sm:flex-col">
         {canEdit ? (
           <Button className="w-full" onClick={onEdit}>
             Edit activity
@@ -102,7 +96,7 @@ function ActivityDetails({ a, canEdit, onEdit, onRequestSignIn }: { a: Activity;
             <Lock /> Sign in with your group code to edit
           </Button>
         )}
-      </SheetFooter>
+      </ModalFooter>
     </>
   );
 }
@@ -230,6 +224,8 @@ function ActivityForm({
   }, [startYear]);
   const throughOptions = useMemo(() => Array.from({ length: 11 }, (_, i) => shiftMonth(f.month, i + 1)), [f.month]);
   const allCfo = GROUPS.every((g) => f.groups.includes(g));
+  // The calendar opens on the month the activity was started from (e.g. the card's + button).
+  const monthDate = new Date(startYear, startMonthNum - 1, 1);
 
   function setLead(v: string) {
     const lead = v === NO_LEAD || !v ? null : (v as Group);
@@ -238,14 +234,21 @@ function ActivityForm({
 
   async function save() {
     const problem = validate(f);
-    if (problem) return setError(problem);
+    if (problem) {
+      setError(problem);
+      toast.error(problem);
+      return;
+    }
     setBusy(true);
     try {
       const input = toInput(f);
       const saved = existing ? await updateActivity(existing.id, input, session) : await createActivity(input, session);
+      toast.success(existing ? "Activity saved" : "Activity added");
       onSaved(saved);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const msg = e instanceof Error ? e.message : "Something went wrong.";
+      setError(msg);
+      toast.error(`Couldn't save: ${msg}`);
     } finally {
       setBusy(false);
     }
@@ -257,6 +260,7 @@ function ActivityForm({
     setBusy(true);
     try {
       await deleteActivity(existing.id, session);
+      toast.success("Activity deleted");
       onDeleted(existing.id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
@@ -266,12 +270,12 @@ function ActivityForm({
 
   return (
     <>
-      <SheetHeader className="px-5 pt-4 sm:pt-6">
-        <SheetTitle className="text-lg tracking-tight">{existing ? "Edit activity" : "New activity"}</SheetTitle>
-        <SheetDescription className="text-xs">Signed in as {GROUP_META[session.group].label}</SheetDescription>
-      </SheetHeader>
+      <ModalHeader>
+        <ModalTitle className="text-lg tracking-tight">{existing ? "Edit activity" : "New activity"}</ModalTitle>
+        <ModalDescription className="text-xs">Signed in as {GROUP_META[session.group].label}</ModalDescription>
+      </ModalHeader>
 
-      <div className="flex-1 space-y-6 overflow-y-auto px-5 pb-5">
+      <ModalBody className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="title">Activity</Label>
           <Input id="title" value={f.title} onChange={(e) => set("title", e.target.value)} placeholder="e.g. Unity Games Volleyball" autoFocus={!existing} />
@@ -413,18 +417,18 @@ function ActivityForm({
             </div>
           ) : (
             <div className="space-y-3 rounded-lg bg-muted/60 p-3">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="sd" className="text-xs font-normal text-muted-foreground">
                     Date
                   </Label>
-                  <Input id="sd" type="date" className="bg-background" value={f.startDate} onChange={(e) => set("startDate", e.target.value)} />
+                  <DatePicker id="sd" value={f.startDate} onChange={(v) => set("startDate", v)} defaultMonth={monthDate} />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="ed" className="text-xs font-normal text-muted-foreground">
                     End date <span className="opacity-70">(optional)</span>
                   </Label>
-                  <Input id="ed" type="date" className="bg-background" value={f.endDate} min={f.startDate || undefined} onChange={(e) => set("endDate", e.target.value)} />
+                  <DatePicker id="ed" value={f.endDate} onChange={(v) => set("endDate", v)} defaultMonth={f.startDate ? parseYmd(f.startDate) : monthDate} min={f.startDate || undefined} placeholder="Same day" clearable />
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -439,13 +443,13 @@ function ActivityForm({
                     <Label htmlFor="st" className="text-xs font-normal text-muted-foreground">
                       Starts
                     </Label>
-                    <Input id="st" type="time" className="bg-background" value={f.startTime} onChange={(e) => set("startTime", e.target.value)} />
+                    <Input id="st" type="time" step={300} className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden" value={f.startTime} onChange={(e) => set("startTime", e.target.value)} />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="et" className="text-xs font-normal text-muted-foreground">
                       Ends <span className="opacity-70">(optional)</span>
                     </Label>
-                    <Input id="et" type="time" className="bg-background" value={f.endTime} onChange={(e) => set("endTime", e.target.value)} />
+                    <Input id="et" type="time" step={300} className="appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden" value={f.endTime} onChange={(e) => set("endTime", e.target.value)} />
                   </div>
                 </div>
               )}
@@ -466,9 +470,9 @@ function ActivityForm({
         </div>
 
         {existing && <p className="text-xs text-muted-foreground">{editedLine(existing)}</p>}
-      </div>
+      </ModalBody>
 
-      <SheetFooter className="border-t px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <ModalFooter className="flex-col sm:flex-col">
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {error}
@@ -491,7 +495,7 @@ function ActivityForm({
             {busy ? "Saving…" : existing ? "Save" : "Add activity"}
           </Button>
         </div>
-      </SheetFooter>
+      </ModalFooter>
     </>
   );
 }
