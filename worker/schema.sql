@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS activities (id TEXT PRIMARY KEY, title TEXT NOT NULL, notes TEXT NOT NULL DEFAULT '', location TEXT NOT NULL DEFAULT '', groups TEXT NOT NULL, lead TEXT, status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','submitted','approved')), month TEXT NOT NULL, end_month TEXT, start_date TEXT, end_date TEXT, start_time TEXT, end_time TEXT, created_by TEXT NOT NULL, updated_by TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS idx_activities_month ON activities (month);
+CREATE INDEX IF NOT EXISTS idx_activities_start_date ON activities (start_date);

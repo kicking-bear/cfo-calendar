@@ -1,0 +1,19 @@
+name = "cfo-calendar"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+[vars]
+# Your GitHub Pages address, e.g. "https://kicking-bear.github.io". Use "*" while testing.
+ALLOWED_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cfo-calendar"
+database_id = "PASTE_YOUR_D1_DATABASE_ID_HERE"
+
+# Edit codes are secrets, not vars. Set them in the Cloudflare dashboard
+# (Worker > Settings > Variables and Secrets) or with:
+#   npx wrangler secret put CODE_CWS
+#   npx wrangler secret put CODE_BINHI
+#   npx wrangler secret put CODE_KADIWA
+#   npx wrangler secret put CODE_BUKLOD
