@@ -58,7 +58,7 @@
   * { @apply border-border outline-ring/50; }
   html, body, #root { height: 100%; }
   /* One flat page colour everywhere (incl. iOS overscroll), so nothing shows through around the header */
-  html, body { background: var(--page); }
+  html, body { background: var(--page); overflow: hidden; overscroll-behavior: none; }
   body {
     @apply text-foreground antialiased;
     font-family: var(--font-sans);

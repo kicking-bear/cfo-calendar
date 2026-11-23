@@ -155,8 +155,8 @@ export default function App() {
   const filtersOn = groupFilter.length > 0 || statusFilter.length > 0;
 
   return (
-    <div className="min-h-full">
-      <header className="sticky top-0 z-30 border-b bg-background">
+    <div className="flex h-screen h-dvh flex-col overflow-hidden">
+      <header className="z-30 shrink-0 border-b bg-background">
         <div className="mx-auto max-w-[1400px] px-4 pt-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
@@ -258,7 +258,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-4 py-4 pb-28 sm:px-6 sm:py-6">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto max-w-[1400px] px-4 py-4 pb-28 sm:px-6 sm:py-6">
         {loadError && (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Couldn't load the calendar</AlertTitle>
@@ -312,6 +313,7 @@ export default function App() {
             Demo mode — changes are saved only in this browser. Connect the Worker to share with the district.
           </p>
         )}
+        </div>
       </main>
 
       {/* Floating add button on phones */}
