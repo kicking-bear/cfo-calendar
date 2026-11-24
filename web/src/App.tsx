@@ -103,7 +103,7 @@ export default function App() {
     () =>
       sortActivities(
         activities.filter(
-          (a) => (groupFilter.length === 0 || a.groups.some((g) => groupFilter.includes(g))) && (statusFilter.length === 0 || statusFilter.includes(a.status))
+          (a) => (groupFilter.length === 0 || (a.lead !== null && groupFilter.includes(a.lead))) && (statusFilter.length === 0 || statusFilter.includes(a.status))
         )
       ),
     [activities, groupFilter, statusFilter]
@@ -111,7 +111,7 @@ export default function App() {
 
   const statusCounts = useMemo(() => {
     const c: Record<Status, number> = { draft: 0, submitted: 0, approved: 0 };
-    for (const a of activities) if (groupFilter.length === 0 || a.groups.some((g) => groupFilter.includes(g))) c[a.status]++;
+    for (const a of activities) if (groupFilter.length === 0 || (a.lead !== null && groupFilter.includes(a.lead))) c[a.status]++;
     return c;
   }, [activities, groupFilter]);
 
